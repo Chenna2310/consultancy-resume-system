@@ -49,7 +49,62 @@ export const dashboardAPI = {
   getStats: () => api.get('/dashboard/stats'),
 };
 
-// Candidates API
+// Employees API
+export const employeesAPI = {
+  getAll: (params = {}) => api.get('/employees', { params }),
+  getById: (id) => api.get(`/employees/${id}`),
+  create: (data) => api.post('/employees', data),
+  update: (id, data) => api.put(`/employees/${id}`, data),
+  delete: (id) => api.delete(`/employees/${id}`),
+  search: (params) => api.get('/employees/search', { params }),
+};
+
+// Bench Candidates API
+export const benchCandidatesAPI = {
+  getAll: (params = {}) => api.get('/bench-candidates', { params }),
+  getById: (id) => api.get(`/bench-candidates/${id}`),
+  create: (formData) => {
+    return api.post('/bench-candidates', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  update: (id, formData) => {
+    return api.put(`/bench-candidates/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  delete: (id) => api.delete(`/bench-candidates/${id}`),
+  search: (params) => api.get('/bench-candidates/search', { params }),
+  downloadResume: (id) => {
+    return api.get(`/bench-candidates/${id}/resume`, {
+      responseType: 'blob',
+    });
+  },
+};
+
+// Working Candidates API
+export const workingCandidatesAPI = {
+  getAll: (params = {}) => api.get('/working-candidates', { params }),
+  getById: (id) => api.get(`/working-candidates/${id}`),
+  create: (data) => api.post('/working-candidates', data),
+  update: (id, data) => api.put(`/working-candidates/${id}`, data),
+  delete: (id) => api.delete(`/working-candidates/${id}`),
+  search: (params) => api.get('/working-candidates/search', { params }),
+};
+
+// Candidate Activities API
+export const candidateActivitiesAPI = {
+  getByCandidateId: (candidateId) => api.get(`/candidate-activities/candidate/${candidateId}`),
+  create: (data) => api.post('/candidate-activities', data),
+  update: (id, data) => api.put(`/candidate-activities/${id}`, data),
+  delete: (id) => api.delete(`/candidate-activities/${id}`),
+};
+
+// Original Candidates API (for all candidates view)
 export const candidatesAPI = {
   getAll: (params = {}) => api.get('/candidates', { params }),
   getById: (id) => api.get(`/candidates/${id}`),
@@ -89,10 +144,9 @@ export const vendorsAPI = {
   getTopPerformers: (limit = 10) => api.get(`/vendors/top-performers?limit=${limit}`),
 };
 
-// Analytics API
+// Analytics API (removed revenue-related APIs)
 export const analyticsAPI = {
   getOverview: () => api.get('/dashboard/stats'),
-  getRevenue: () => api.get('/dashboard/revenue-analytics'),
   getConsultantPerformance: () => api.get('/dashboard/consultant-performance'),
   getVendorAnalytics: () => api.get('/dashboard/vendor-analytics'),
   getSubmissionTrends: (days = 30) => api.get(`/dashboard/submission-trends?days=${days}`),

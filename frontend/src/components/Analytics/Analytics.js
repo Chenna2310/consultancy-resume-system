@@ -5,7 +5,6 @@ import toast from 'react-hot-toast';
 const Analytics = () => {
   const [data, setData] = useState({
     overview: {},
-    revenue: {},
     consultantPerformance: {},
     vendorAnalytics: {},
   });
@@ -20,16 +19,14 @@ const Analytics = () => {
       setLoading(true);
       
       // Fetch all analytics data
-      const [overview, revenue, consultants, vendors] = await Promise.all([
+      const [overview, consultants, vendors] = await Promise.all([
         analyticsAPI.getOverview(),
-        analyticsAPI.getRevenue().catch(() => ({ data: {} })),
         analyticsAPI.getConsultantPerformance().catch(() => ({ data: {} })),
         analyticsAPI.getVendorAnalytics().catch(() => ({ data: {} })),
       ]);
 
       setData({
         overview: overview.data,
-        revenue: revenue.data,
         consultantPerformance: consultants.data,
         vendorAnalytics: vendors.data,
       });
@@ -55,8 +52,8 @@ const Analytics = () => {
     ? ((overview.workingCandidates || 0) / overview.totalCandidates * 100).toFixed(1)
     : 0;
 
-  const benchUtilization = overview.benchProfiles > 0 
-    ? (((overview.totalCandidates || 0) - (overview.benchProfiles || 0)) / (overview.totalCandidates || 0) * 100).toFixed(1)
+  const benchUtilization = overview.totalCandidates > 0 
+    ? (((overview.workingCandidates || 0)) / (overview.totalCandidates || 0) * 100).toFixed(1)
     : 0;
 
   return (
@@ -118,11 +115,11 @@ const Analytics = () => {
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-            ${overview.monthlyRevenue ? (overview.monthlyRevenue / 1000).toFixed(0) + 'K' : '0'}
+            {overview.totalEmployees || 0}
           </div>
-          <div style={{ fontSize: '1.1rem', opacity: 0.9 }}>Monthly Revenue</div>
+          <div style={{ fontSize: '1.1rem', opacity: 0.9 }}>Team Members</div>
           <div style={{ fontSize: '0.875rem', opacity: 0.7, marginTop: '0.25rem' }}>
-            Estimated monthly earnings
+            Consultancy staff
           </div>
         </div>
 
@@ -136,9 +133,9 @@ const Analytics = () => {
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
             {benchUtilization}%
           </div>
-          <div style={{ fontSize: '1.1rem', opacity: 0.9 }}>Bench Utilization</div>
+          <div style={{ fontSize: '1.1rem', opacity: 0.9 }}>Placement Success</div>
           <div style={{ fontSize: '0.875rem', opacity: 0.7, marginTop: '0.25rem' }}>
-            Candidates in productive status
+            Working vs Total candidates
           </div>
         </div>
       </div>
@@ -237,10 +234,10 @@ const Analytics = () => {
               borderLeft: '4px solid #10B981'
             }}>
               <div style={{ fontWeight: '600', color: '#1F2937', marginBottom: '0.25rem' }}>
-                Revenue Opportunity
+                Growth Opportunity
               </div>
               <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>
-                {overview.benchProfiles || 0} bench candidates represent potential revenue opportunities
+                {overview.benchProfiles || 0} bench candidates represent potential placement opportunities
               </div>
             </div>
 
@@ -309,7 +306,7 @@ const Analytics = () => {
               cursor: 'pointer'
             }}>
               <div style={{ fontWeight: '600', color: '#1F2937', marginBottom: '0.25rem' }}>
-                Consultant Performance Review
+                Team Performance Review
               </div>
               <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>
                 Analyze individual consultant metrics and provide feedback
@@ -318,7 +315,7 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* Revenue Breakdown */}
+        {/* Team Statistics */}
         <div style={{ 
           background: 'white', 
           borderRadius: '12px', 
@@ -326,28 +323,28 @@ const Analytics = () => {
           padding: '2rem'
         }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1.5rem', color: '#1F2937' }}>
-            💰 Revenue Analysis
+            👥 Team Overview
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#6B7280' }}>Monthly Revenue</span>
+              <span style={{ color: '#6B7280' }}>Total Employees</span>
               <span style={{ fontWeight: '600', fontSize: '1.1rem' }}>
-                ${overview.monthlyRevenue ? overview.monthlyRevenue.toLocaleString() : '0'}
+                {overview.totalEmployees || 0}
               </span>
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#6B7280' }}>Projected Annual</span>
+              <span style={{ color: '#6B7280' }}>Active Vendors</span>
               <span style={{ fontWeight: '600', fontSize: '1.1rem' }}>
-                ${overview.monthlyRevenue ? (overview.monthlyRevenue * 12).toLocaleString() : '0'}
+                {overview.totalVendors || 0}
               </span>
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#6B7280' }}>Avg per Working Candidate</span>
+              <span style={{ color: '#6B7280' }}>Candidates per Employee</span>
               <span style={{ fontWeight: '600', fontSize: '1.1rem' }}>
-                ${overview.workingCandidates > 0 ? Math.round((overview.monthlyRevenue || 0) / overview.workingCandidates).toLocaleString() : '0'}
+                {overview.totalEmployees > 0 ? Math.round((overview.totalCandidates || 0) / overview.totalEmployees) : 0}
               </span>
             </div>
 
@@ -357,7 +354,7 @@ const Analytics = () => {
               borderTop: '1px solid #E5E7EB' 
             }}>
               <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>
-                Revenue calculations based on current working candidates and estimated hourly rates
+                Performance metrics based on current team size and candidate portfolio
               </div>
             </div>
           </div>

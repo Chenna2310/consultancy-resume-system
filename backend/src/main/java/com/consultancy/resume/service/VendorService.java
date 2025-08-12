@@ -93,6 +93,10 @@ public class VendorService {
         vendorRepository.delete(vendor);
     }
 
+    public Long getTotalVendorsCount() {
+    return vendorRepository.count();
+    }
+
     public Page<VendorResponse> searchVendors(String companyName, String contactName, 
                                             Vendor.VendorStatus status, Pageable pageable) {
         Page<Vendor> vendors = vendorRepository.searchVendors(companyName, contactName, status, pageable);

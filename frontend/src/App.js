@@ -6,8 +6,15 @@ import Layout from './components/Layout/Layout';
 import Dashboard from './components/Dashboard/Dashboard';
 import CandidateList from './components/Candidates/CandidateList';
 import CandidateForm from './components/Candidates/CandidateForm';
+import BenchCandidateList from './components/BenchCandidates/BenchCandidateList';
+import BenchCandidateForm from './components/BenchCandidates/BenchCandidateForm';
+import BenchCandidateDetail from './components/BenchCandidates/BenchCandidateDetail';
+import WorkingCandidateList from './components/WorkingCandidates/WorkingCandidateList';
+import WorkingCandidateForm from './components/WorkingCandidates/WorkingCandidateForm';
 import VendorList from './components/Vendors/VendorList';
 import VendorForm from './components/Vendors/VendorForm';
+import EmployeeList from './components/Employees/EmployeeList';
+import EmployeeForm from './components/Employees/EmployeeForm';
 import Analytics from './components/Analytics/Analytics';
 import { isAuthenticated } from './utils/auth';
 import './App.css';
@@ -54,17 +61,30 @@ function App() {
             <Route index element={<Navigate to="/dashboard" />} />
             <Route path="dashboard" element={<Dashboard />} />
             
-            {/* Candidate Routes */}
-            <Route path="bench-profiles" element={<CandidateList filterStatus="BENCH" pageTitle="Bench Profiles" />} />
-            <Route path="working-candidates" element={<CandidateList filterStatus="WORKING" pageTitle="Working Candidates" />} />
+            {/* Bench Candidate Routes */}
+            <Route path="bench-candidates" element={<BenchCandidateList />} />
+            <Route path="bench-candidates/new" element={<BenchCandidateForm />} />
+            <Route path="bench-candidates/edit/:id" element={<BenchCandidateForm />} />
+            <Route path="bench-candidates/detail/:id" element={<BenchCandidateDetail />} />
+            
+            {/* Working Candidate Routes */}
+            <Route path="working-candidates" element={<WorkingCandidateList />} />
+            <Route path="working-candidates/new" element={<WorkingCandidateForm />} />
+            <Route path="working-candidates/edit/:id" element={<WorkingCandidateForm />} />
+            
+            {/* All Candidates Routes */}
             <Route path="candidates" element={<CandidateList pageTitle="All Candidates" />} />
-            <Route path="candidates/new" element={<CandidateForm />} />
             <Route path="candidates/edit/:id" element={<CandidateForm />} />
             
             {/* Vendor Routes */}
             <Route path="vendors" element={<VendorList />} />
             <Route path="vendors/new" element={<VendorForm />} />
             <Route path="vendors/edit/:id" element={<VendorForm />} />
+            
+            {/* Employee Routes */}
+            <Route path="employees" element={<EmployeeList />} />
+            <Route path="employees/new" element={<EmployeeForm />} />
+            <Route path="employees/edit/:id" element={<EmployeeForm />} />
             
             {/* Analytics */}
             <Route path="analytics" element={<Analytics />} />

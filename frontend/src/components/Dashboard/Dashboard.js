@@ -9,7 +9,7 @@ const Dashboard = () => {
     workingCandidates: 0,
     totalCandidates: 0,
     totalVendors: 0,
-    monthlyRevenue: 0,
+    totalEmployees: 0,
     recentCandidates: [],
   });
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ const Dashboard = () => {
       value: stats.benchProfiles,
       color: '#3B82F6',
       bgColor: '#DBEAFE',
-      link: '/bench-profiles',
+      link: '/bench-candidates',
       description: 'Available for placement'
     },
     {
@@ -151,10 +151,8 @@ const Dashboard = () => {
           borderRadius: '12px',
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-            ${stats.monthlyRevenue ? (stats.monthlyRevenue / 1000).toFixed(0) + 'K' : '0'}
-          </div>
-          <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>Monthly Revenue</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.totalEmployees || 0}</div>
+          <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>Team Members</div>
         </div>
 
         <div style={{ 
@@ -165,7 +163,7 @@ const Dashboard = () => {
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-            {stats.benchProfiles > 0 ? Math.round((stats.workingCandidates / stats.benchProfiles) * 100) : 0}%
+            {stats.benchProfiles > 0 ? Math.round((stats.workingCandidates / (stats.benchProfiles + stats.workingCandidates)) * 100) : 0}%
           </div>
           <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>Placement Rate</div>
         </div>
@@ -175,17 +173,30 @@ const Dashboard = () => {
       <div className="recent-candidates">
         <div className="section-header">
           <h2 className="section-title">Recent Candidates</h2>
-          <Link 
-            to="/candidates/new" 
-            style={{ 
-              color: '#3B82F6', 
-              textDecoration: 'none',
-              fontWeight: '500',
-              fontSize: '0.875rem'
-            }}
-          >
-            + Add New Candidate
-          </Link>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <Link 
+              to="/bench-candidates/new" 
+              style={{ 
+                color: '#3B82F6', 
+                textDecoration: 'none',
+                fontWeight: '500',
+                fontSize: '0.875rem'
+              }}
+            >
+              + Add Bench Candidate
+            </Link>
+            <Link 
+              to="/working-candidates/new" 
+              style={{ 
+                color: '#10B981', 
+                textDecoration: 'none',
+                fontWeight: '500',
+                fontSize: '0.875rem'
+              }}
+            >
+              + Add Working Candidate
+            </Link>
+          </div>
         </div>
         
         {stats.recentCandidates && stats.recentCandidates.length > 0 ? (
@@ -197,7 +208,6 @@ const Dashboard = () => {
                   <th>Primary Skill</th>
                   <th>Experience</th>
                   <th>Location</th>
-                  <th>Consultant</th>
                   <th>Status</th>
                   <th>Added</th>
                 </tr>
@@ -207,7 +217,7 @@ const Dashboard = () => {
                   <tr key={candidate.id}>
                     <td style={{ fontWeight: '600' }}>
                       <Link 
-                        to={`/candidates/edit/${candidate.id}`}
+                        to={candidate.status === 'BENCH' ? `/bench-profiles/detail/${candidate.id}` : `/candidates/edit/${candidate.id}`}
                         style={{ color: '#3B82F6', textDecoration: 'none' }}
                       >
                         {candidate.fullName}
@@ -216,9 +226,6 @@ const Dashboard = () => {
                     <td>{candidate.primarySkill}</td>
                     <td>{candidate.experienceYears} years</td>
                     <td>{candidate.location}</td>
-                    <td style={{ color: '#6B7280', fontSize: '0.875rem' }}>
-                      {candidate.assignedConsultantName || 'Unassigned'}
-                    </td>
                     <td>
                       <span className={getStatusBadgeClass(candidate.status)}>
                         {candidate.status}
@@ -236,16 +243,29 @@ const Dashboard = () => {
           <div style={{ padding: '3rem', textAlign: 'center', color: '#6B7280' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
             <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No candidates found</p>
-            <Link 
-              to="/candidates/new" 
-              style={{ 
-                color: '#3B82F6', 
-                textDecoration: 'none',
-                fontWeight: '500'
-              }}
-            >
-              Add your first candidate to get started
-            </Link>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <Link 
+                to="/bench-candidates/new" 
+                style={{ 
+                  color: '#3B82F6', 
+                  textDecoration: 'none',
+                  fontWeight: '500'
+                }}
+              >
+                Add your first bench candidate
+              </Link>
+              <span style={{ color: '#6B7280' }}>or</span>
+              <Link 
+                to="/working-candidates/new" 
+                style={{ 
+                  color: '#10B981', 
+                  textDecoration: 'none',
+                  fontWeight: '500'
+                }}
+              >
+                Add working candidate
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -262,11 +282,14 @@ const Dashboard = () => {
             Quick Actions
           </h3>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <Link to="/candidates/new" className="btn-primary" style={{ textDecoration: 'none', width: 'auto' }}>
-              ➕ Add New Candidate
+            <Link to="/bench-profiles/new" className="btn-primary" style={{ textDecoration: 'none', width: 'auto' }}>
+              ➕ Add Bench Candidate
             </Link>
-            <Link to="/bench-profiles" className="btn-secondary" style={{ textDecoration: 'none' }}>
-              👥 View Bench Profiles
+            <Link to="/working-candidates/new" className="btn-secondary" style={{ textDecoration: 'none' }}>
+              💼 Add Working Candidate
+            </Link>
+            <Link to="/employees/new" className="btn-secondary" style={{ textDecoration: 'none' }}>
+              👤 Add Employee
             </Link>
             <Link to="/vendors/new" className="btn-secondary" style={{ textDecoration: 'none' }}>
               🏢 Add Vendor
