@@ -4,8 +4,6 @@ import { Toaster } from 'react-hot-toast';
 import Login from './components/Auth/Login';
 import Layout from './components/Layout/Layout';
 import Dashboard from './components/Dashboard/Dashboard';
-import CandidateList from './components/Candidates/CandidateList';
-import CandidateForm from './components/Candidates/CandidateForm';
 import BenchCandidateList from './components/BenchCandidates/BenchCandidateList';
 import BenchCandidateForm from './components/BenchCandidates/BenchCandidateForm';
 import BenchCandidateDetail from './components/BenchCandidates/BenchCandidateDetail';
@@ -71,10 +69,6 @@ function App() {
             <Route path="working-candidates" element={<WorkingCandidateList />} />
             <Route path="working-candidates/new" element={<WorkingCandidateForm />} />
             <Route path="working-candidates/edit/:id" element={<WorkingCandidateForm />} />
-            
-            {/* All Candidates Routes */}
-            <Route path="candidates" element={<CandidateList pageTitle="All Candidates" />} />
-            <Route path="candidates/edit/:id" element={<CandidateForm />} />
             
             {/* Vendor Routes */}
             <Route path="vendors" element={<VendorList />} />

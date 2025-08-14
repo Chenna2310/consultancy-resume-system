@@ -23,8 +23,8 @@ const BenchCandidateForm = () => {
   });
 
   const [employees, setEmployees] = useState([]);
-  const [resume, setResume] = useState(null);
-  const [currentResumeFilename, setCurrentResumeFilename] = useState('');
+  const [documents, setDocuments] = useState([]); // Multiple documents
+  const [currentDocuments, setCurrentDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingCandidate, setLoadingCandidate] = useState(isEdit);
 
@@ -61,7 +61,10 @@ const BenchCandidateForm = () => {
         assignedConsultantId: candidate.assignedConsultantId || '',
         notes: candidate.notes || '',
       });
-      setCurrentResumeFilename(candidate.resumeFilename || '');
+      // Set current documents if any
+      if (candidate.documents) {
+        setCurrentDocuments(candidate.documents);
+      }
     } catch (error) {
       toast.error('Failed to load candidate details');
       navigate('/bench-candidates');
@@ -79,30 +82,41 @@ const BenchCandidateForm = () => {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      ];
-      
-      if (!allowedTypes.includes(file.type)) {
-        toast.error('Please select a PDF or Word document');
-        e.target.value = '';
-        return;
-      }
+    const files = Array.from(e.target.files);
+    
+    if (files.length === 0) return;
 
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('File size must be less than 10MB');
-        e.target.value = '';
-        return;
-      }
-
-      setResume(file);
+    // Validate file types
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/png',
+      'image/jpg'
+    ];
+    
+    const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
+    if (invalidFiles.length > 0) {
+      toast.error('Please select only PDF, Word documents, or image files');
+      e.target.value = '';
+      return;
     }
+
+    // Validate total file size (max 50MB total)
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+    if (totalSize > 50 * 1024 * 1024) {
+      toast.error('Total file size must be less than 50MB');
+      e.target.value = '';
+      return;
+    }
+
+    setDocuments(files);
+  };
+
+  const removeDocument = (index) => {
+    const newDocuments = documents.filter((_, i) => i !== index);
+    setDocuments(newDocuments);
   };
 
   const handleSubmit = async (e) => {
@@ -119,10 +133,10 @@ const BenchCandidateForm = () => {
         }
       });
 
-      // Append resume file if selected
-      if (resume) {
-        submitData.append('resume', resume);
-      }
+      // Append document files
+      documents.forEach((file, index) => {
+        submitData.append(`documents`, file);
+      });
 
       let response;
       if (isEdit) {
@@ -156,7 +170,7 @@ const BenchCandidateForm = () => {
   }
 
   return (
-    <div>
+    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem' }}>
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1F2937', marginBottom: '0.5rem' }}>
           {isEdit ? 'Edit Bench Candidate' : 'Add New Bench Candidate'}
@@ -166,9 +180,19 @@ const BenchCandidateForm = () => {
         </p>
       </div>
 
-      <div className="form-container">
+      <div style={{ 
+        background: 'white', 
+        borderRadius: '12px', 
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        padding: '2rem'
+      }}>
         <form onSubmit={handleSubmit}>
-          <div className="form-grid">
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+            gap: '1.5rem', 
+            marginBottom: '2rem' 
+          }}>
             {/* Full Name */}
             <div className="form-group">
               <label htmlFor="fullName" className="form-label">
@@ -316,7 +340,7 @@ const BenchCandidateForm = () => {
             {/* Target Rate */}
             <div className="form-group">
               <label htmlFor="targetRate" className="form-label">
-                Approx Looking Rate ($/hr)
+                Target Rate ($/hr)
               </label>
               <input
                 type="number"
@@ -334,7 +358,7 @@ const BenchCandidateForm = () => {
             {/* Assigned Consultant */}
             <div className="form-group">
               <label htmlFor="assignedConsultantId" className="form-label">
-                Assigned Consultant (Optional)
+                Assigned Consultant
               </label>
               <select
                 id="assignedConsultantId"
@@ -350,14 +374,11 @@ const BenchCandidateForm = () => {
                   </option>
                 ))}
               </select>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                You can assign a consultant now or later during editing
-              </div>
             </div>
           </div>
 
           {/* Notes */}
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: '2rem' }}>
             <label htmlFor="notes" className="form-label">
               Notes
             </label>
@@ -367,44 +388,97 @@ const BenchCandidateForm = () => {
               className="form-input"
               value={formData.notes}
               onChange={handleChange}
-              rows="4"
+              rows="3"
               placeholder="Additional notes about the candidate..."
               style={{ resize: 'vertical' }}
             />
           </div>
 
-          {/* Resume Upload */}
-          <div className="form-group">
-            <label htmlFor="resume" className="form-label">
-              Resume *
+          {/* Documents Upload */}
+          <div className="form-group" style={{ marginBottom: '2rem' }}>
+            <label htmlFor="documents" className="form-label">
+              Upload Documents *
             </label>
-            {currentResumeFilename && (
+            
+            {/* Current documents display */}
+            {currentDocuments.length > 0 && (
               <div style={{ 
-                marginBottom: '0.5rem', 
-                padding: '0.5rem', 
+                marginBottom: '1rem', 
+                padding: '1rem', 
                 backgroundColor: '#f3f4f6', 
-                borderRadius: '4px',
-                fontSize: '0.875rem'
+                borderRadius: '8px'
               }}>
-                Current file: <strong>{currentResumeFilename}</strong>
+                <h4 style={{ marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '600' }}>
+                  Current Documents:
+                </h4>
+                {currentDocuments.map((doc, index) => (
+                  <div key={index} style={{ fontSize: '0.875rem', color: '#6B7280' }}>
+                    📄 {doc.filename}
+                  </div>
+                ))}
               </div>
             )}
+
             <input
               type="file"
-              id="resume"
-              name="resume"
+              id="documents"
+              name="documents"
               className="form-input"
               onChange={handleFileChange}
-              accept=".pdf,.doc,.docx"
-              required={!isEdit && !currentResumeFilename}
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              multiple
+              required={!isEdit && currentDocuments.length === 0}
             />
-            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-              Accepted formats: PDF, DOC, DOCX (Max size: 10MB)
+            
+            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
+              Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max total size: 50MB)
             </div>
+
+            {/* Selected documents preview */}
+            {documents.length > 0 && (
+              <div style={{ marginTop: '1rem' }}>
+                <h4 style={{ marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '600' }}>
+                  Selected Documents ({documents.length}):
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {documents.map((file, index) => (
+                    <div 
+                      key={index}
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: '0.5rem',
+                        backgroundColor: '#F3F4F6',
+                        borderRadius: '4px',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      <span>📄 {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      <button
+                        type="button"
+                        onClick={() => removeDocument(index)}
+                        style={{
+                          background: '#EF4444',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Form Actions */}
-          <div className="form-actions">
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
             <button
               type="button"
               onClick={handleCancel}

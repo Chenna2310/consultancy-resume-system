@@ -10,7 +10,6 @@ const Dashboard = () => {
     totalCandidates: 0,
     totalVendors: 0,
     totalEmployees: 0,
-    recentCandidates: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -27,9 +26,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const statCards = [
+  };const statCards = [
     {
       title: 'Bench Profiles',
       value: stats.benchProfiles,
@@ -45,26 +42,8 @@ const Dashboard = () => {
       bgColor: '#D1FAE5',
       link: '/working-candidates',
       description: 'Currently employed'
-    },
-    {
-      title: 'Total Candidates',
-      value: stats.totalCandidates,
-      color: '#6B7280',
-      bgColor: '#F3F4F6',
-      link: '/candidates',
-      description: 'Complete database'
-    },
+    }
   ];
-
-  const getStatusBadgeClass = (status) => {
-    const statusMap = {
-      'BENCH': 'status-bench',
-      'WORKING': 'status-working',
-      'INTERVIEW': 'status-interview',
-      'PLACED': 'status-placed',
-    };
-    return `status-badge ${statusMap[status] || 'status-bench'}`;
-  };
 
   if (loading) {
     return (
@@ -169,107 +148,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Recent Candidates */}
-      <div className="recent-candidates">
-        <div className="section-header">
-          <h2 className="section-title">Recent Candidates</h2>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <Link 
-              to="/bench-candidates/new" 
-              style={{ 
-                color: '#3B82F6', 
-                textDecoration: 'none',
-                fontWeight: '500',
-                fontSize: '0.875rem'
-              }}
-            >
-              + Add Bench Candidate
-            </Link>
-            <Link 
-              to="/working-candidates/new" 
-              style={{ 
-                color: '#10B981', 
-                textDecoration: 'none',
-                fontWeight: '500',
-                fontSize: '0.875rem'
-              }}
-            >
-              + Add Working Candidate
-            </Link>
-          </div>
-        </div>
-        
-        {stats.recentCandidates && stats.recentCandidates.length > 0 ? (
-          <div className="table-container">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Primary Skill</th>
-                  <th>Experience</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Added</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.recentCandidates.slice(0, 8).map((candidate) => (
-                  <tr key={candidate.id}>
-                    <td style={{ fontWeight: '600' }}>
-                      <Link 
-                        to={candidate.status === 'BENCH' ? `/bench-profiles/detail/${candidate.id}` : `/candidates/edit/${candidate.id}`}
-                        style={{ color: '#3B82F6', textDecoration: 'none' }}
-                      >
-                        {candidate.fullName}
-                      </Link>
-                    </td>
-                    <td>{candidate.primarySkill}</td>
-                    <td>{candidate.experienceYears} years</td>
-                    <td>{candidate.location}</td>
-                    <td>
-                      <span className={getStatusBadgeClass(candidate.status)}>
-                        {candidate.status}
-                      </span>
-                    </td>
-                    <td style={{ color: '#6B7280', fontSize: '0.875rem' }}>
-                      {new Date(candidate.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#6B7280' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
-            <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No candidates found</p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <Link 
-                to="/bench-candidates/new" 
-                style={{ 
-                  color: '#3B82F6', 
-                  textDecoration: 'none',
-                  fontWeight: '500'
-                }}
-              >
-                Add your first bench candidate
-              </Link>
-              <span style={{ color: '#6B7280' }}>or</span>
-              <Link 
-                to="/working-candidates/new" 
-                style={{ 
-                  color: '#10B981', 
-                  textDecoration: 'none',
-                  fontWeight: '500'
-                }}
-              >
-                Add working candidate
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Quick Actions */}
       <div style={{ marginTop: '2rem' }}>
         <div style={{ 
@@ -282,7 +160,7 @@ const Dashboard = () => {
             Quick Actions
           </h3>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <Link to="/bench-profiles/new" className="btn-primary" style={{ textDecoration: 'none', width: 'auto' }}>
+            <Link to="/bench-candidates/new" className="btn-primary" style={{ textDecoration: 'none', width: 'auto' }}>
               ➕ Add Bench Candidate
             </Link>
             <Link to="/working-candidates/new" className="btn-secondary" style={{ textDecoration: 'none' }}>

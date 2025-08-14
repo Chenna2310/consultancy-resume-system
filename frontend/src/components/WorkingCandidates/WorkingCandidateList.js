@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 const WorkingCandidateList = () => {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [filters, setFilters] = useState({
     fullName: '',
     visaStatus: '',
@@ -91,6 +92,38 @@ const WorkingCandidateList = () => {
     }
   };
 
+  const handleDeleteAll = async () => {
+    const confirmMessage = `Are you sure you want to delete ALL ${pagination.totalElements} working candidates? This action cannot be undone.`;
+    
+    if (window.confirm(confirmMessage)) {
+      const doubleConfirm = window.confirm('This will permanently delete all working candidates. Are you absolutely sure?');
+      
+      if (doubleConfirm) {
+        setDeletingAll(true);
+        try {
+          // Get all candidates first
+          const allCandidatesResponse = await workingCandidatesAPI.getAll({ size: 1000 });
+          const allCandidates = allCandidatesResponse.data.content || allCandidatesResponse.data;
+          
+          // Delete each candidate
+          const deletePromises = allCandidates.map(candidate => 
+            workingCandidatesAPI.delete(candidate.id)
+          );
+          
+          await Promise.all(deletePromises);
+          
+          toast.success(`Successfully deleted all ${allCandidates.length} working candidates`);
+          fetchCandidates(0);
+        } catch (error) {
+          toast.error('Failed to delete all working candidates');
+          console.error('Error deleting all candidates:', error);
+        } finally {
+          setDeletingAll(false);
+        }
+      }
+    }
+  };
+
   return (
     <div>
       <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -105,9 +138,30 @@ const WorkingCandidateList = () => {
             {Array.isArray(candidates) ? candidates.length : pagination.totalElements} candidates found
           </p>
         </div>
-        <Link to="/working-candidates/new" className="btn-primary" style={{ textDecoration: 'none' }}>
-          ➕ Add Working Candidate
-        </Link>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          {pagination.totalElements > 0 && (
+            <button
+              onClick={handleDeleteAll}
+              disabled={deletingAll}
+              style={{
+                background: '#EF4444',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                cursor: deletingAll ? 'not-allowed' : 'pointer',
+                opacity: deletingAll ? 0.6 : 1,
+                textDecoration: 'none'
+              }}
+            >
+              {deletingAll ? '🗑️ Deleting All...' : '🗑️ Delete All'}
+            </button>
+          )}
+          <Link to="/working-candidates/new" className="btn-primary" style={{ textDecoration: 'none' }}>
+            ➕ Add Working Candidate
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -251,6 +305,20 @@ const WorkingCandidateList = () => {
                     >
                       Edit Details
                     </Link>
+                    <button
+                      onClick={() => handleDelete(candidate.id)}
+                      style={{
+                        background: '#EF4444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🗑️ Delete
+                    </button>
                   </div>
                 </div>
               </div>

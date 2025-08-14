@@ -2,17 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { benchCandidatesAPI } from '../../services/api';
 import toast from 'react-hot-toast';
+import './Modal.css';
 
 const BenchCandidateList = () => {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [filters, setFilters] = useState({
     fullName: '',
     visaStatus: '',
     primarySkill: '',
-    state: '',
-    assignedConsultantName: '',
+    state: ''
   });
+  const [showFilters, setShowFilters] = useState(false);
   const [pagination, setPagination] = useState({
     page: 0,
     size: 10,
@@ -73,10 +75,13 @@ const BenchCandidateList = () => {
       fullName: '',
       visaStatus: '',
       primarySkill: '',
-      state: '',
-      assignedConsultantName: '',
+      state: ''
     });
     setTimeout(() => fetchCandidates(0), 100);
+  };
+
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
   };
 
   const handleDelete = async (id) => {
@@ -87,6 +92,38 @@ const BenchCandidateList = () => {
         fetchCandidates(pagination.page);
       } catch (error) {
         toast.error('Failed to delete bench candidate');
+      }
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    const confirmMessage = `Are you sure you want to delete ALL ${pagination.totalElements} bench candidates? This action cannot be undone.`;
+    
+    if (window.confirm(confirmMessage)) {
+      const doubleConfirm = window.confirm('This will permanently delete all bench candidates. Are you absolutely sure?');
+      
+      if (doubleConfirm) {
+        setDeletingAll(true);
+        try {
+          // Get all candidates first
+          const allCandidatesResponse = await benchCandidatesAPI.getAll({ size: 1000 });
+          const allCandidates = allCandidatesResponse.data.content || allCandidatesResponse.data;
+          
+          // Delete each candidate
+          const deletePromises = allCandidates.map(candidate => 
+            benchCandidatesAPI.delete(candidate.id)
+          );
+          
+          await Promise.all(deletePromises);
+          
+          toast.success(`Successfully deleted all ${allCandidates.length} bench candidates`);
+          fetchCandidates(0);
+        } catch (error) {
+          toast.error('Failed to delete all bench candidates');
+          console.error('Error deleting all candidates:', error);
+        } finally {
+          setDeletingAll(false);
+        }
       }
     }
   };
@@ -121,95 +158,138 @@ const BenchCandidateList = () => {
             {Array.isArray(candidates) ? candidates.length : pagination.totalElements} candidates found
           </p>
         </div>
-        <Link to="/bench-candidates/new" className="btn-primary" style={{ textDecoration: 'none' }}>
-          ➕ Add Bench Candidate
-        </Link>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button
+            onClick={toggleFilters}
+            style={{
+              background: '#4F46E5',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 1rem',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              cursor: 'pointer'
+            }}
+          >
+            🔍 Filter
+          </button>
+          {pagination.totalElements > 0 && (
+            <button
+              onClick={handleDeleteAll}
+              disabled={deletingAll}
+              style={{
+                background: '#EF4444',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                cursor: deletingAll ? 'not-allowed' : 'pointer',
+                opacity: deletingAll ? 0.6 : 1,
+                textDecoration: 'none'
+              }}
+            >
+              {deletingAll ? '🗑️ Deleting All...' : '🗑️ Delete All'}
+            </button>
+          )}
+          <Link to="/bench-candidates/new" className="btn-primary" style={{ textDecoration: 'none' }}>
+            ➕ Add Bench Candidate
+          </Link>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div style={{ 
-        background: 'white', 
-        borderRadius: '12px', 
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        padding: '1.5rem',
-        marginBottom: '2rem'
-      }}>
-        <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
-          Search & Filter
-        </h3>
-        <div className="form-grid">
-          <div className="form-group">
-            <label className="form-label">Name</label>
-            <input
-              type="text"
-              name="fullName"
-              className="form-input"
-              value={filters.fullName}
-              onChange={handleFilterChange}
-              placeholder="Search by name..."
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Primary Skill</label>
-            <input
-              type="text"
-              name="primarySkill"
-              className="form-input"
-              value={filters.primarySkill}
-              onChange={handleFilterChange}
-              placeholder="e.g. Java, React..."
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Visa Status</label>
-            <select
-              name="visaStatus"
-              className="form-input"
-              value={filters.visaStatus}
-              onChange={handleFilterChange}
-            >
-              <option value="">All Visa Status</option>
-              <option value="H1B">H1B</option>
-              <option value="OPT">OPT</option>
-              <option value="GC">Green Card</option>
-              <option value="CITIZEN">US Citizen</option>
-              <option value="F1">F1</option>
-              <option value="L1">L1</option>
-              <option value="OTHER">Other</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="form-label">State</label>
-            <input
-              type="text"
-              name="state"
-              className="form-input"
-              value={filters.state}
-              onChange={handleFilterChange}
-              placeholder="e.g. CA, NY..."
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Consultant</label>
-            <input
-              type="text"
-              name="assignedConsultantName"
-              className="form-input"
-              value={filters.assignedConsultantName}
-              onChange={handleFilterChange}
-              placeholder="Assigned consultant..."
-            />
+      {/* Filter Modal */}
+      {showFilters && (
+        <div className="modal-backdrop" onClick={toggleFilters}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', margin: 0 }}>
+                Search & Filter
+              </h3>
+              <button 
+                onClick={toggleFilters}
+                style={{ background: 'transparent', border: 'none', fontSize: '1.25rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ marginBottom: '0.25rem', display: 'block' }}>Name</label>
+                <input
+                  type="text"
+                  name="fullName"
+                  className="form-input"
+                  value={filters.fullName}
+                  onChange={handleFilterChange}
+                  placeholder="Search by name..."
+                  style={{ padding: '0.5rem' }}
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ marginBottom: '0.25rem', display: 'block' }}>Primary Skill</label>
+                <input
+                  type="text"
+                  name="primarySkill"
+                  className="form-input"
+                  value={filters.primarySkill}
+                  onChange={handleFilterChange}
+                  placeholder="e.g. Java, React..."
+                  style={{ padding: '0.5rem' }}
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ marginBottom: '0.25rem', display: 'block' }}>Visa Status</label>
+                <select
+                  name="visaStatus"
+                  className="form-input"
+                  value={filters.visaStatus}
+                  onChange={handleFilterChange}
+                  style={{ padding: '0.5rem' }}
+                >
+                  <option value="">All Visa Status</option>
+                  <option value="H1B">H1B</option>
+                  <option value="OPT">OPT</option>
+                  <option value="GC">Green Card</option>
+                  <option value="CITIZEN">US Citizen</option>
+                  <option value="F1">F1</option>
+                  <option value="L1">L1</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ marginBottom: '0.25rem', display: 'block' }}>State</label>
+                <input
+                  type="text"
+                  name="state"
+                  className="form-input"
+                  value={filters.state}
+                  onChange={handleFilterChange}
+                  placeholder="e.g. CA, NY..."
+                  style={{ padding: '0.5rem' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', justifyContent: 'flex-end' }}>
+              <button onClick={handleClearFilters} className="btn-secondary" style={{ padding: '0.5rem 1rem' }}>
+                Clear
+              </button>
+              <button 
+                onClick={() => {
+                  handleSearch();
+                  toggleFilters();
+                }} 
+                className="btn-primary"
+                style={{ padding: '0.5rem 1rem' }}
+              >
+                Apply Filters
+              </button>
+            </div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-          <button onClick={handleSearch} className="btn-primary">
-            🔍 Search
-          </button>
-          <button onClick={handleClearFilters} className="btn-secondary">
-            Clear Filters
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Candidates Display */}
       <div style={{ 
@@ -271,6 +351,20 @@ const BenchCandidateList = () => {
                     >
                       More Details
                     </Link>
+                    <button
+                      onClick={() => handleDelete(candidate.id)}
+                      style={{
+                        background: '#EF4444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🗑️ Delete
+                    </button>
                   </div>
                 </div>
               </div>

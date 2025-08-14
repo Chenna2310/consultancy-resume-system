@@ -109,6 +109,6 @@ public class WorkingCandidateService {
     }
 
     public Long getTotalWorkingCandidatesCount() {
-        return workingCandidateRepository.countBy();
+        return workingCandidateRepository.count();
     }
 }

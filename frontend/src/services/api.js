@@ -79,6 +79,26 @@ export const benchCandidatesAPI = {
   },
   delete: (id) => api.delete(`/bench-candidates/${id}`),
   search: (params) => api.get('/bench-candidates/search', { params }),
+  
+  // Document management
+  getDocuments: (candidateId) => api.get(`/bench-candidates/${candidateId}/documents`),
+  uploadDocuments: (candidateId, formData) => {
+    return api.post(`/bench-candidates/${candidateId}/documents`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  downloadDocument: (candidateId, documentId) => {
+    return api.get(`/bench-candidates/${candidateId}/documents/${documentId}`, {
+      responseType: 'blob',
+    });
+  },
+  deleteDocument: (candidateId, documentId) => {
+    return api.delete(`/bench-candidates/${candidateId}/documents/${documentId}`);
+  },
+  
+  // Legacy resume download (for backward compatibility)
   downloadResume: (id) => {
     return api.get(`/bench-candidates/${id}/resume`, {
       responseType: 'blob',
