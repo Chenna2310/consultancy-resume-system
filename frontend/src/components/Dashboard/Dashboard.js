@@ -58,10 +58,10 @@ const Dashboard = () => {
       {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#1F2937', marginBottom: '0.5rem' }}>
-          Welcome to ConsultancyPro
+          Welcome to Jupiter IT Solutions LLC
         </h1>
         <p style={{ color: '#6B7280', fontSize: '1.1rem' }}>
-          Your complete candidate management dashboard
+          Professional IT Consulting & Talent Management Platform
         </p>
       </div>
 

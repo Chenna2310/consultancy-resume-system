@@ -11,7 +11,7 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-title">
-        Consultancy Resume Management
+        Jupiter IT Solutions - Professional Dashboard
       </div>
       <div className="header-actions">
         <div className="user-info">

@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "bench_candidates")
@@ -61,6 +63,9 @@ public class BenchCandidate {
     @Column(name = "resume_path")
     private String resumePath;
 
+    @OneToMany(mappedBy = "benchCandidate", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<CandidateDocument> documents = new ArrayList<>();
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -81,7 +86,7 @@ public class BenchCandidate {
     // Constructors
     public BenchCandidate() {}
 
-    // Getters and Setters
+    // All getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -124,6 +129,9 @@ public class BenchCandidate {
     public String getResumePath() { return resumePath; }
     public void setResumePath(String resumePath) { this.resumePath = resumePath; }
 
+    public List<CandidateDocument> getDocuments() { return documents; }
+    public void setDocuments(List<CandidateDocument> documents) { this.documents = documents; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
@@ -138,6 +146,16 @@ public class BenchCandidate {
 
     public String getAssignedConsultantName() {
         return assignedConsultant != null ? assignedConsultant.getFullName() : null;
+    }
+
+    public void addDocument(CandidateDocument document) {
+        documents.add(document);
+        document.setBenchCandidate(this);
+    }
+
+    public void removeDocument(CandidateDocument document) {
+        documents.remove(document);
+        document.setBenchCandidate(null);
     }
 
     @PreUpdate

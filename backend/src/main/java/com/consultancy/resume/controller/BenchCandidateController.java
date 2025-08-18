@@ -2,6 +2,7 @@ package com.consultancy.resume.controller;
 
 import com.consultancy.resume.dto.BenchCandidateRequest;
 import com.consultancy.resume.dto.BenchCandidateResponse;
+import com.consultancy.resume.dto.CandidateDocumentResponse;
 import com.consultancy.resume.entity.BenchCandidate;
 import com.consultancy.resume.service.BenchCandidateService;
 import com.consultancy.resume.service.UserPrincipal;
@@ -31,10 +32,10 @@ public class BenchCandidateController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BenchCandidateResponse> createBenchCandidate(
             @Valid @ModelAttribute BenchCandidateRequest request,
-            @RequestParam(value = "resume", required = false) MultipartFile resume,
+            @RequestParam(value = "documents", required = false) MultipartFile[] documents,
             @AuthenticationPrincipal UserPrincipal currentUser) {
         
-        BenchCandidateResponse candidate = benchCandidateService.createBenchCandidate(request, resume, currentUser);
+        BenchCandidateResponse candidate = benchCandidateService.createBenchCandidate(request, documents, currentUser);
         return ResponseEntity.ok(candidate);
     }
 
@@ -64,9 +65,9 @@ public class BenchCandidateController {
     public ResponseEntity<BenchCandidateResponse> updateBenchCandidate(
             @PathVariable Long id,
             @Valid @ModelAttribute BenchCandidateRequest request,
-            @RequestParam(value = "resume", required = false) MultipartFile resume) {
+            @RequestParam(value = "documents", required = false) MultipartFile[] documents) {
         
-        BenchCandidateResponse candidate = benchCandidateService.updateBenchCandidate(id, request, resume);
+        BenchCandidateResponse candidate = benchCandidateService.updateBenchCandidate(id, request, documents);
         return ResponseEntity.ok(candidate);
     }
 
@@ -100,6 +101,7 @@ public class BenchCandidateController {
         return ResponseEntity.ok(candidates);
     }
 
+    // Legacy resume download endpoint (backward compatibility)
     @GetMapping("/{id}/resume")
     public ResponseEntity<byte[]> downloadResume(@PathVariable Long id) {
         byte[] resumeData = benchCandidateService.getResumeFile(id);
@@ -110,5 +112,71 @@ public class BenchCandidateController {
                        "attachment; filename=\"" + candidate.getResumeFilename() + "\"")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resumeData);
+    }
+
+    // Document management endpoints
+    @GetMapping("/{id}/documents")
+    public ResponseEntity<List<CandidateDocumentResponse>> getCandidateDocuments(@PathVariable Long id) {
+        List<CandidateDocumentResponse> documents = benchCandidateService.getCandidateDocuments(id);
+        return ResponseEntity.ok(documents);
+    }
+
+    @PostMapping("/{id}/documents")
+    public ResponseEntity<CandidateDocumentResponse> uploadDocument(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        
+        CandidateDocumentResponse document = benchCandidateService.uploadDocument(id, file, currentUser);
+        return ResponseEntity.ok(document);
+    }
+
+    @PostMapping("/{id}/documents/multiple")
+    public ResponseEntity<List<CandidateDocumentResponse>> uploadMultipleDocuments(
+            @PathVariable Long id,
+            @RequestParam("files") MultipartFile[] files,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        
+        List<CandidateDocumentResponse> documents = new java.util.ArrayList<>();
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                CandidateDocumentResponse document = benchCandidateService.uploadDocument(id, file, currentUser);
+                documents.add(document);
+            }
+        }
+        return ResponseEntity.ok(documents);
+    }
+
+    @GetMapping("/{candidateId}/documents/{documentId}")
+    public ResponseEntity<byte[]> downloadDocument(
+            @PathVariable Long candidateId,
+            @PathVariable Long documentId) {
+        
+        byte[] documentData = benchCandidateService.downloadDocument(candidateId, documentId);
+        CandidateDocumentResponse document = benchCandidateService.getDocumentById(candidateId, documentId);
+        
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, 
+                       "attachment; filename=\"" + document.getOriginalFilename() + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(documentData);
+    }
+
+    @DeleteMapping("/{candidateId}/documents/{documentId}")
+    public ResponseEntity<?> deleteDocument(
+            @PathVariable Long candidateId,
+            @PathVariable Long documentId) {
+        
+        benchCandidateService.deleteDocument(candidateId, documentId);
+        return ResponseEntity.ok().body("{\"message\": \"Document deleted successfully!\"}");
+    }
+
+    @GetMapping("/{candidateId}/documents/{documentId}/info")
+    public ResponseEntity<CandidateDocumentResponse> getDocumentInfo(
+            @PathVariable Long candidateId,
+            @PathVariable Long documentId) {
+        
+        CandidateDocumentResponse document = benchCandidateService.getDocumentById(candidateId, documentId);
+        return ResponseEntity.ok(document);
     }
 }

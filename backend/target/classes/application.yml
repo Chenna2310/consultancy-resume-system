@@ -5,7 +5,7 @@ server:
 
 spring:
   application:
-    name: consultancy-resume-system
+    name: jupiter-it-solutions-system
     
   datasource:
     url: jdbc:mysql://localhost:3306/consultancy_resume_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
@@ -29,9 +29,14 @@ spring:
       max-request-size: 15MB
 
 app:
+  company:
+    name: Jupiter IT Solutions LLC
+    short-name: Jupiter IT Solutions
+    tagline: Empowering Your Digital Transformation
+    description: Professional IT Consulting & Talent Management Platform
   jwt:
     secret: consultancyResumeSystemSecretKeyForJWTAuthenticationAndAuthorizationSecurity2024
-    expiration: 86400000  # 24 hours
+    expiration: 86400000
   file:
     upload-dir: ./uploads/resumes/
 

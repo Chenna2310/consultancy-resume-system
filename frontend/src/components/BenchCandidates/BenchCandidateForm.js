@@ -32,6 +32,7 @@ const BenchCandidateForm = () => {
     fetchEmployees();
     if (isEdit) {
       fetchCandidate();
+      fetchCurrentDocuments();
     }
   }, [id, isEdit]);
 
@@ -61,15 +62,20 @@ const BenchCandidateForm = () => {
         assignedConsultantId: candidate.assignedConsultantId || '',
         notes: candidate.notes || '',
       });
-      // Set current documents if any
-      if (candidate.documents) {
-        setCurrentDocuments(candidate.documents);
-      }
     } catch (error) {
       toast.error('Failed to load candidate details');
       navigate('/bench-candidates');
     } finally {
       setLoadingCandidate(false);
+    }
+  };
+
+  const fetchCurrentDocuments = async () => {
+    try {
+      const response = await benchCandidatesAPI.getDocuments(id);
+      setCurrentDocuments(response.data);
+    } catch (error) {
+      console.error('Failed to load current documents:', error);
     }
   };
 
@@ -119,6 +125,18 @@ const BenchCandidateForm = () => {
     setDocuments(newDocuments);
   };
 
+  const deleteCurrentDocument = async (documentId) => {
+    if (window.confirm('Are you sure you want to delete this document?')) {
+      try {
+        await benchCandidatesAPI.deleteDocument(id, documentId);
+        toast.success('Document deleted successfully!');
+        fetchCurrentDocuments();
+      } catch (error) {
+        toast.error('Failed to delete document');
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -134,8 +152,8 @@ const BenchCandidateForm = () => {
       });
 
       // Append document files
-      documents.forEach((file, index) => {
-        submitData.append(`documents`, file);
+      documents.forEach((file) => {
+        submitData.append('documents', file);
       });
 
       let response;
@@ -159,6 +177,19 @@ const BenchCandidateForm = () => {
 
   const handleCancel = () => {
     navigate('/bench-candidates');
+  };
+
+  const getFileIcon = (filename) => {
+    const ext = filename.split('.').pop().toLowerCase();
+    switch (ext) {
+      case 'pdf': return '📄';
+      case 'doc':
+      case 'docx': return '📝';
+      case 'jpg':
+      case 'jpeg':
+      case 'png': return '🖼️';
+      default: return '📎';
+    }
   };
 
   if (loadingCandidate) {
@@ -394,31 +425,67 @@ const BenchCandidateForm = () => {
             />
           </div>
 
-          {/* Documents Upload */}
-          <div className="form-group" style={{ marginBottom: '2rem' }}>
-            <label htmlFor="documents" className="form-label">
-              Upload Documents *
-            </label>
-            
-            {/* Current documents display */}
-            {currentDocuments.length > 0 && (
+          {/* Current Documents (only for edit mode) */}
+          {isEdit && currentDocuments.length > 0 && (
+            <div className="form-group" style={{ marginBottom: '2rem' }}>
+              <label className="form-label">Current Documents</label>
               <div style={{ 
-                marginBottom: '1rem', 
-                padding: '1rem', 
-                backgroundColor: '#f3f4f6', 
-                borderRadius: '8px'
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                gap: '1rem',
+                marginTop: '0.5rem'
               }}>
-                <h4 style={{ marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '600' }}>
-                  Current Documents:
-                </h4>
-                {currentDocuments.map((doc, index) => (
-                  <div key={index} style={{ fontSize: '0.875rem', color: '#6B7280' }}>
-                    📄 {doc.filename}
+                {currentDocuments.map((doc) => (
+                  <div 
+                    key={doc.id}
+                    style={{ 
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      padding: '1rem',
+                      backgroundColor: '#F9FAFB'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '1.5rem', marginRight: '0.5rem' }}>
+                        {getFileIcon(doc.originalFilename)}
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', fontSize: '0.875rem' }}>
+                          {doc.originalFilename}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                          {doc.formattedFileSize} • {new Date(doc.uploadedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => deleteCurrentDocument(doc.id)}
+                      style={{
+                        background: '#EF4444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        width: '100%'
+                      }}
+                    >
+                      🗑️ Delete
+                    </button>
                   </div>
                 ))}
               </div>
-            )}
+            </div>
+          )}
 
+          {/* Documents Upload */}
+          <div className="form-group" style={{ marginBottom: '2rem' }}>
+            <label htmlFor="documents" className="form-label">
+              {isEdit ? 'Upload Additional Documents' : 'Upload Documents *'}
+            </label>
+            
             <input
               type="file"
               id="documents"
@@ -454,7 +521,9 @@ const BenchCandidateForm = () => {
                         fontSize: '0.875rem'
                       }}
                     >
-                      <span>📄 {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      <span>
+                        {getFileIcon(file.name)} {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
                       <button
                         type="button"
                         onClick={() => removeDocument(index)}

@@ -14,7 +14,7 @@ const BenchCandidateDetail = () => {
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [activeTab, setActiveTab] = useState('documents');
   const [documentPreview, setDocumentPreview] = useState(null);
-  const [newDocuments, setNewDocuments] = useState([]);
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
   
   const [activityForm, setActivityForm] = useState({
     activityType: 'APPLIED',
@@ -56,23 +56,10 @@ const BenchCandidateDetail = () => {
 
   const fetchDocuments = async () => {
     try {
-      // This will fetch documents associated with the candidate
       const response = await benchCandidatesAPI.getDocuments(id);
       setDocuments(response.data || []);
     } catch (error) {
       console.error('Failed to load documents:', error);
-      // For now, create mock documents based on uploaded files
-      if (candidate?.resumeFilename) {
-        setDocuments([
-          {
-            id: 1,
-            filename: candidate.resumeFilename,
-            uploadDate: candidate.createdAt,
-            size: '2.5 MB',
-            type: 'pdf'
-          }
-        ]);
-      }
     }
   };
 
@@ -112,25 +99,26 @@ const BenchCandidateDetail = () => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
+    setUploadingDocuments(true);
     try {
-      const formData = new FormData();
-      files.forEach(file => {
-        formData.append('documents', file);
-      });
-      formData.append('candidateId', id);
-
-      await benchCandidatesAPI.uploadDocuments(id, formData);
-      toast.success('Documents uploaded successfully!');
+      if (files.length === 1) {
+        await benchCandidatesAPI.uploadDocument(id, files[0]);
+      } else {
+        await benchCandidatesAPI.uploadMultipleDocuments(id, files);
+      }
+      toast.success(`${files.length} document(s) uploaded successfully!`);
       fetchDocuments();
-      setNewDocuments([]);
+      e.target.value = ''; // Reset file input
     } catch (error) {
       toast.error('Failed to upload documents');
+    } finally {
+      setUploadingDocuments(false);
     }
   };
 
-  const handleDownloadDocument = async (docId, filename) => {
+  const handleDownloadDocument = async (documentId, filename) => {
     try {
-      const response = await benchCandidatesAPI.downloadDocument(id, docId);
+      const response = await benchCandidatesAPI.downloadDocument(id, documentId);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -144,9 +132,9 @@ const BenchCandidateDetail = () => {
     }
   };
 
-  const handlePreviewDocument = async (docId, filename) => {
+  const handlePreviewDocument = async (documentId, filename) => {
     try {
-      const response = await benchCandidatesAPI.downloadDocument(id, docId);
+      const response = await benchCandidatesAPI.downloadDocument(id, documentId);
       const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
       
@@ -160,10 +148,10 @@ const BenchCandidateDetail = () => {
     }
   };
 
-  const handleDeleteDocument = async (docId) => {
+  const handleDeleteDocument = async (documentId) => {
     if (window.confirm('Are you sure you want to delete this document?')) {
       try {
-        await benchCandidatesAPI.deleteDocument(id, docId);
+        await benchCandidatesAPI.deleteDocument(id, documentId);
         toast.success('Document deleted successfully!');
         fetchDocuments();
       } catch (error) {
@@ -199,7 +187,7 @@ const BenchCandidateDetail = () => {
   };
 
   const getFileIcon = (filename) => {
-    const ext = filename.split('.').pop().toLowerCase();
+    const ext = filename?.split('.').pop()?.toLowerCase() || '';
     switch (ext) {
       case 'pdf': return '📄';
       case 'doc':
@@ -304,7 +292,7 @@ const BenchCandidateDetail = () => {
               transition: 'all 0.3s ease'
             }}
           >
-            📄 Documents
+            📄 Documents ({documents.length})
           </button>
           <button
             onClick={() => setActiveTab('activity')}
@@ -319,7 +307,7 @@ const BenchCandidateDetail = () => {
               transition: 'all 0.3s ease'
             }}
           >
-            📊 Daily Activity
+            📊 Daily Activity ({activities.length})
           </button>
           <button
             onClick={() => setActiveTab('progress')}
@@ -355,22 +343,27 @@ const BenchCandidateDetail = () => {
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                     onChange={handleDocumentUpload}
                     style={{ display: 'none' }}
+                    disabled={uploadingDocuments}
                   />
                   <label
                     htmlFor="uploadDocs"
                     className="btn-primary"
-                    style={{ cursor: 'pointer', display: 'inline-block' }}
+                    style={{ 
+                      cursor: uploadingDocuments ? 'not-allowed' : 'pointer', 
+                      display: 'inline-block',
+                      opacity: uploadingDocuments ? 0.6 : 1
+                    }}
                   >
-                    📎 Upload Documents
+                    {uploadingDocuments ? '⏳ Uploading...' : '📎 Upload Documents'}
                   </label>
                 </div>
               </div>
 
               {documents.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                  {documents.map((doc, index) => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1rem' }}>
+                  {documents.map((doc) => (
                     <div 
-                      key={doc.id || index}
+                      key={doc.id}
                       style={{ 
                         border: '1px solid #E5E7EB',
                         borderRadius: '8px',
@@ -383,21 +376,34 @@ const BenchCandidateDetail = () => {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                         <span style={{ fontSize: '2rem', marginRight: '0.75rem' }}>
-                          {getFileIcon(doc.filename || doc.resumeFilename || 'file')}
+                          {getFileIcon(doc.originalFilename)}
                         </span>
                         <div style={{ flex: 1 }}>
                           <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.25rem' }}>
-                            {doc.filename || doc.resumeFilename || 'Document'}
+                            {doc.originalFilename}
                           </h4>
                           <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>
-                            {doc.size || '2.5 MB'} • Uploaded {new Date(doc.uploadDate || doc.createdAt || Date.now()).toLocaleDateString()}
+                            {doc.formattedFileSize} • Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
                           </p>
+                          {doc.documentType && doc.documentType !== 'OTHER' && (
+                            <span style={{
+                              fontSize: '0.75rem',
+                              backgroundColor: '#DBEAFE',
+                              color: '#1E40AF',
+                              padding: '0.125rem 0.5rem',
+                              borderRadius: '9999px',
+                              marginTop: '0.25rem',
+                              display: 'inline-block'
+                            }}>
+                              {doc.documentType.replace('_', ' ')}
+                            </span>
+                          )}
                         </div>
                       </div>
                       
                       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <button
-                          onClick={() => handlePreviewDocument(doc.id || 1, doc.filename || doc.resumeFilename)}
+                          onClick={() => handlePreviewDocument(doc.id, doc.originalFilename)}
                           style={{
                             background: '#3B82F6',
                             color: 'white',
@@ -414,7 +420,7 @@ const BenchCandidateDetail = () => {
                           👁️ Preview
                         </button>
                         <button
-                          onClick={() => handleDownloadDocument(doc.id || 1, doc.filename || doc.resumeFilename)}
+                          onClick={() => handleDownloadDocument(doc.id, doc.originalFilename)}
                           style={{
                             background: '#10B981',
                             color: 'white',
@@ -431,7 +437,7 @@ const BenchCandidateDetail = () => {
                           ⬇️ Download
                         </button>
                         <button
-                          onClick={() => handleDeleteDocument(doc.id || 1)}
+                          onClick={() => handleDeleteDocument(doc.id)}
                           style={{
                             background: '#EF4444',
                             color: 'white',
@@ -690,12 +696,126 @@ const BenchCandidateDetail = () => {
 
           {/* Progress Tab */}
           {activeTab === 'progress' && (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#6B7280' }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📈</div>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Progress Tracking</h3>
-              <p style={{ fontSize: '0.875rem' }}>
-                Advanced progress tracking features coming soon...
-              </p>
+            <div>
+              <div style={{ 
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>
+                  📈 Candidate Progress
+                </h3>
+              </div>
+              
+              <div>
+                {activities.length > 0 ? (
+                  <>
+                    <div style={{ marginBottom: '2rem' }}>
+                      <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>Activity Summary</h4>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                        gap: '1rem' 
+                      }}>
+                        <div style={{ 
+                          backgroundColor: '#F0F9FF', 
+                          padding: '1.5rem', 
+                          borderRadius: '8px',
+                          border: '1px solid #DBEAFE'
+                        }}>
+                          <div style={{ fontSize: '2rem', fontWeight: '700', color: '#3B82F6' }}>{activities.length}</div>
+                          <div>Total Activities</div>
+                        </div>
+                        <div style={{ 
+                          backgroundColor: '#F0FDF4', 
+                          padding: '1.5rem', 
+                          borderRadius: '8px',
+                          border: '1px solid #DCFCE7'
+                        }}>
+                          <div style={{ fontSize: '2rem', fontWeight: '700', color: '#10B981' }}>
+                            {activities.filter(a => a.activityType === 'SUBMITTED').length}
+                          </div>
+                          <div>Submissions</div>
+                        </div>
+                        <div style={{ 
+                          backgroundColor: '#FFFBEB', 
+                          padding: '1.5rem', 
+                          borderRadius: '8px',
+                          border: '1px solid #FEF3C7'
+                        }}>
+                          <div style={{ fontSize: '2rem', fontWeight: '700', color: '#F59E0B' }}>
+                            {activities.filter(a => 
+                              a.activityType === 'INTERVIEW_SCHEDULED' || 
+                              a.activityType === 'INTERVIEW_COMPLETED'
+                            ).length}
+                          </div>
+                          <div>Interviews</div>
+                        </div>
+                        <div style={{ 
+                          backgroundColor: '#FEF2F2', 
+                          padding: '1.5rem', 
+                          borderRadius: '8px',
+                          border: '1px solid #FECACA'
+                        }}>
+                          <div style={{ fontSize: '2rem', fontWeight: '700', color: '#EF4444' }}>
+                            {activities.filter(a => a.activityType === 'REJECTED').length}
+                          </div>
+                          <div>Rejections</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem' }}>Recent Activity Timeline</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {activities.slice(0, 5).map((activity, index) => (
+                          <div 
+                            key={activity.id} 
+                            style={{ 
+                              display: 'flex', 
+                              padding: '0.75rem',
+                              borderLeft: `3px solid ${getActivityTypeColor(activity.activityType)}`,
+                              backgroundColor: index % 2 === 0 ? '#F9FAFB' : 'white'
+                            }}
+                          >
+                            <div style={{ width: '120px', fontSize: '0.875rem', color: '#6B7280' }}>
+                              {new Date(activity.activityDate).toLocaleDateString()}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: '600' }}>
+                                {getActivityTypeDisplay(activity.activityType)} - {activity.clientName}
+                              </div>
+                              {activity.submittedRate && (
+                                <div style={{ fontSize: '0.875rem' }}>
+                                  Rate: <span style={{ color: '#10B981', fontWeight: '600' }}>${activity.submittedRate}/hr</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ textAlign: 'center', color: '#6B7280', padding: '3rem' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📈</div>
+                    <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No progress data available</h3>
+                    <p style={{ fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                      Add daily activities to start tracking this candidate's progress
+                    </p>
+                    <button 
+                      onClick={() => {
+                        setActiveTab('activity');
+                        setShowActivityForm(true);
+                      }}
+                      className="btn-primary"
+                    >
+                      Add Activity Data
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -761,10 +881,17 @@ const BenchCandidateDetail = () => {
                 />
               ) : (
                 <div>
+                  <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📄</div>
                   <p>Preview not available for this file type.</p>
                   <button
-                    onClick={() => handleDownloadDocument(1, documentPreview.filename)}
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = documentPreview.url;
+                      link.download = documentPreview.filename;
+                      link.click();
+                    }}
                     className="btn-primary"
+                    style={{ marginTop: '1rem' }}
                   >
                     Download File
                   </button>

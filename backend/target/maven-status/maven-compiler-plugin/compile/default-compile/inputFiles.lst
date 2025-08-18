@@ -7,6 +7,7 @@ C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\jav
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\controller\DashboardController.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\repository\UserRepository.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\service\CustomUserDetailsService.java
+C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\dto\CandidateDocumentRequest.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\dto\EmployeeResponse.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\service\WorkingCandidateService.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\repository\EmployeeRepository.java
@@ -18,8 +19,10 @@ C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\jav
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\service\UserPrincipal.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\controller\EmployeeController.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\controller\AuthController.java
+C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\dto\CandidateDocumentResponse.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\dto\JwtResponse.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\dto\VendorRequest.java
+C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\entity\CandidateDocument.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\dto\WorkingCandidateRequest.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\service\CandidateActivityService.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\controller\CandidateController.java
@@ -34,6 +37,7 @@ C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\jav
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\repository\WorkingCandidateRepository.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\dto\CandidateActivityRequest.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\entity\Employee.java
+C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\repository\CandidateDocumentRepository.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\dto\VendorResponse.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\service\FileStorageService.java
 C:\Users\shiva\OneDrive\Documents\consultancy-resume-system\backend\src\main\java\com\consultancy\resume\ConsultancyResumeApplication.java

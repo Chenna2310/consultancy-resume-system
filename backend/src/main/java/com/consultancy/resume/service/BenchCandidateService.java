@@ -2,10 +2,13 @@ package com.consultancy.resume.service;
 
 import com.consultancy.resume.dto.BenchCandidateRequest;
 import com.consultancy.resume.dto.BenchCandidateResponse;
+import com.consultancy.resume.dto.CandidateDocumentResponse;
 import com.consultancy.resume.entity.BenchCandidate;
+import com.consultancy.resume.entity.CandidateDocument;
 import com.consultancy.resume.entity.Employee;
 import com.consultancy.resume.entity.User;
 import com.consultancy.resume.repository.BenchCandidateRepository;
+import com.consultancy.resume.repository.CandidateDocumentRepository;
 import com.consultancy.resume.repository.EmployeeRepository;
 import com.consultancy.resume.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +29,9 @@ public class BenchCandidateService {
     private BenchCandidateRepository benchCandidateRepository;
 
     @Autowired
+    private CandidateDocumentRepository candidateDocumentRepository;
+
+    @Autowired
     private EmployeeRepository employeeRepository;
 
     @Autowired
@@ -34,7 +40,7 @@ public class BenchCandidateService {
     @Autowired
     private FileStorageService fileStorageService;
 
-    public BenchCandidateResponse createBenchCandidate(BenchCandidateRequest request, MultipartFile resume, 
+    public BenchCandidateResponse createBenchCandidate(BenchCandidateRequest request, MultipartFile[] documents, 
                                                       UserPrincipal currentUser) {
         BenchCandidate candidate = new BenchCandidate();
         candidate.setFullName(request.getFullName());
@@ -60,15 +66,63 @@ public class BenchCandidateService {
             .orElseThrow(() -> new RuntimeException("User not found"));
         candidate.setCreatedBy(user);
 
-        // Handle file upload
-        if (resume != null && !resume.isEmpty()) {
-            String filename = fileStorageService.storeFile(resume);
-            candidate.setResumeFilename(resume.getOriginalFilename());
-            candidate.setResumePath(filename);
+        // Save candidate first
+        BenchCandidate savedCandidate = benchCandidateRepository.save(candidate);
+
+        // Handle document uploads
+        if (documents != null && documents.length > 0) {
+            for (MultipartFile document : documents) {
+                if (!document.isEmpty()) {
+                    try {
+                        String filename = fileStorageService.storeFile(document);
+                        
+                        CandidateDocument candidateDoc = new CandidateDocument(
+                            filename,
+                            document.getOriginalFilename(),
+                            filename, // filePath same as filename for now
+                            document.getSize(),
+                            document.getContentType(),
+                            savedCandidate
+                        );
+                        candidateDoc.setUploadedBy(user);
+                        
+                        // Determine document type based on filename
+                        String originalName = document.getOriginalFilename().toLowerCase();
+                        if (originalName.contains("resume") || originalName.contains("cv")) {
+                            candidateDoc.setDocumentType(CandidateDocument.DocumentType.RESUME);
+                        } else if (originalName.contains("certificate")) {
+                            candidateDoc.setDocumentType(CandidateDocument.DocumentType.CERTIFICATE);
+                        } else if (originalName.contains("degree")) {
+                            candidateDoc.setDocumentType(CandidateDocument.DocumentType.DEGREE);
+                        } else {
+                            candidateDoc.setDocumentType(CandidateDocument.DocumentType.OTHER);
+                        }
+                        
+                        candidateDocumentRepository.save(candidateDoc);
+                        
+                        // Set the first resume as the main resume for backward compatibility
+                        if (savedCandidate.getResumeFilename() == null && 
+                            candidateDoc.getDocumentType() == CandidateDocument.DocumentType.RESUME) {
+                            savedCandidate.setResumeFilename(document.getOriginalFilename());
+                            savedCandidate.setResumePath(filename);
+                            benchCandidateRepository.save(savedCandidate);
+                        }
+                        
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to upload document: " + document.getOriginalFilename(), e);
+                    }
+                }
+            }
         }
 
-        BenchCandidate savedCandidate = benchCandidateRepository.save(candidate);
         return new BenchCandidateResponse(savedCandidate);
+    }
+
+    public BenchCandidateResponse createBenchCandidate(BenchCandidateRequest request, MultipartFile resume, 
+                                                      UserPrincipal currentUser) {
+        // Handle single file upload (backward compatibility)
+        MultipartFile[] documents = resume != null ? new MultipartFile[]{resume} : new MultipartFile[0];
+        return createBenchCandidate(request, documents, currentUser);
     }
 
     public Page<BenchCandidateResponse> getAllBenchCandidates(Pageable pageable) {
@@ -82,7 +136,7 @@ public class BenchCandidateService {
         return new BenchCandidateResponse(candidate);
     }
 
-    public BenchCandidateResponse updateBenchCandidate(Long id, BenchCandidateRequest request, MultipartFile resume) {
+    public BenchCandidateResponse updateBenchCandidate(Long id, BenchCandidateRequest request, MultipartFile[] documents) {
         BenchCandidate candidate = benchCandidateRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Bench candidate not found with id: " + id));
 
@@ -106,27 +160,56 @@ public class BenchCandidateService {
             candidate.setAssignedConsultant(null);
         }
 
-        // Handle file upload
-        if (resume != null && !resume.isEmpty()) {
-            // Delete old file if exists
-            if (candidate.getResumePath() != null) {
-                fileStorageService.deleteFile(candidate.getResumePath());
-            }
+        // Handle new document uploads
+        if (documents != null && documents.length > 0) {
+            User currentUser = candidate.getCreatedBy(); // Use existing user for simplicity
             
-            String filename = fileStorageService.storeFile(resume);
-            candidate.setResumeFilename(resume.getOriginalFilename());
-            candidate.setResumePath(filename);
+            for (MultipartFile document : documents) {
+                if (!document.isEmpty()) {
+                    try {
+                        String filename = fileStorageService.storeFile(document);
+                        
+                        CandidateDocument candidateDoc = new CandidateDocument(
+                            filename,
+                            document.getOriginalFilename(),
+                            filename,
+                            document.getSize(),
+                            document.getContentType(),
+                            candidate
+                        );
+                        candidateDoc.setUploadedBy(currentUser);
+                        
+                        candidateDocumentRepository.save(candidateDoc);
+                        
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to upload document: " + document.getOriginalFilename(), e);
+                    }
+                }
+            }
         }
 
         BenchCandidate updatedCandidate = benchCandidateRepository.save(candidate);
         return new BenchCandidateResponse(updatedCandidate);
     }
 
+    public BenchCandidateResponse updateBenchCandidate(Long id, BenchCandidateRequest request, MultipartFile resume) {
+        // Handle single file upload (backward compatibility)
+        MultipartFile[] documents = resume != null ? new MultipartFile[]{resume} : new MultipartFile[0];
+        return updateBenchCandidate(id, request, documents);
+    }
+
     public void deleteBenchCandidate(Long id) {
         BenchCandidate candidate = benchCandidateRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Bench candidate not found with id: " + id));
 
-        // Delete resume file if exists
+        // Delete all documents first
+        List<CandidateDocument> documents = candidateDocumentRepository.findByBenchCandidateIdOrderByUploadedAtDesc(id);
+        for (CandidateDocument doc : documents) {
+            fileStorageService.deleteFile(doc.getFilePath());
+        }
+        candidateDocumentRepository.deleteByBenchCandidateId(id);
+
+        // Delete old resume file if exists (backward compatibility)
         if (candidate.getResumePath() != null) {
             fileStorageService.deleteFile(candidate.getResumePath());
         }
@@ -172,5 +255,80 @@ public class BenchCandidateService {
 
     public Long getTotalBenchCandidatesCount() {
         return benchCandidateRepository.countBy();
+    }
+
+    // Document management methods
+    public List<CandidateDocumentResponse> getCandidateDocuments(Long candidateId) {
+        List<CandidateDocument> documents = candidateDocumentRepository.findByBenchCandidateIdOrderByUploadedAtDesc(candidateId);
+        return documents.stream()
+                .map(CandidateDocumentResponse::new)
+                .collect(Collectors.toList());
+    }
+
+    public CandidateDocumentResponse uploadDocument(Long candidateId, MultipartFile file, UserPrincipal currentUser) {
+        BenchCandidate candidate = benchCandidateRepository.findById(candidateId)
+            .orElseThrow(() -> new RuntimeException("Bench candidate not found with id: " + candidateId));
+
+        User user = userRepository.findById(currentUser.getId())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        try {
+            String filename = fileStorageService.storeFile(file);
+            
+            CandidateDocument document = new CandidateDocument(
+                filename,
+                file.getOriginalFilename(),
+                filename,
+                file.getSize(),
+                file.getContentType(),
+                candidate
+            );
+            document.setUploadedBy(user);
+            
+            // Auto-determine document type
+            String originalName = file.getOriginalFilename().toLowerCase();
+            if (originalName.contains("resume") || originalName.contains("cv")) {
+                document.setDocumentType(CandidateDocument.DocumentType.RESUME);
+            } else if (originalName.contains("certificate")) {
+                document.setDocumentType(CandidateDocument.DocumentType.CERTIFICATE);
+            } else if (originalName.contains("degree")) {
+                document.setDocumentType(CandidateDocument.DocumentType.DEGREE);
+            } else if (originalName.contains("transcript")) {
+                document.setDocumentType(CandidateDocument.DocumentType.TRANSCRIPT);
+            } else {
+                document.setDocumentType(CandidateDocument.DocumentType.OTHER);
+            }
+            
+            CandidateDocument savedDocument = candidateDocumentRepository.save(document);
+            return new CandidateDocumentResponse(savedDocument);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload document: " + file.getOriginalFilename(), e);
+        }
+    }
+
+    public byte[] downloadDocument(Long candidateId, Long documentId) {
+        CandidateDocument document = candidateDocumentRepository.findByIdAndBenchCandidateId(documentId, candidateId)
+            .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        return fileStorageService.loadFileAsBytes(document.getFilePath());
+    }
+
+    public void deleteDocument(Long candidateId, Long documentId) {
+        CandidateDocument document = candidateDocumentRepository.findByIdAndBenchCandidateId(documentId, candidateId)
+            .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        // Delete physical file
+        fileStorageService.deleteFile(document.getFilePath());
+        
+        // Delete database record
+        candidateDocumentRepository.delete(document);
+    }
+
+    public CandidateDocumentResponse getDocumentById(Long candidateId, Long documentId) {
+        CandidateDocument document = candidateDocumentRepository.findByIdAndBenchCandidateId(documentId, candidateId)
+            .orElseThrow(() -> new RuntimeException("Document not found"));
+        
+        return new CandidateDocumentResponse(document);
     }
 }

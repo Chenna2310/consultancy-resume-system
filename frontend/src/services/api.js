@@ -82,8 +82,21 @@ export const benchCandidatesAPI = {
   
   // Document management
   getDocuments: (candidateId) => api.get(`/bench-candidates/${candidateId}/documents`),
-  uploadDocuments: (candidateId, formData) => {
+  uploadDocument: (candidateId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
     return api.post(`/bench-candidates/${candidateId}/documents`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  uploadMultipleDocuments: (candidateId, files) => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+    return api.post(`/bench-candidates/${candidateId}/documents/multiple`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -96,6 +109,9 @@ export const benchCandidatesAPI = {
   },
   deleteDocument: (candidateId, documentId) => {
     return api.delete(`/bench-candidates/${candidateId}/documents/${documentId}`);
+  },
+  getDocumentInfo: (candidateId, documentId) => {
+    return api.get(`/bench-candidates/${candidateId}/documents/${documentId}/info`);
   },
   
   // Legacy resume download (for backward compatibility)
@@ -164,7 +180,7 @@ export const vendorsAPI = {
   getTopPerformers: (limit = 10) => api.get(`/vendors/top-performers?limit=${limit}`),
 };
 
-// Analytics API (removed revenue-related APIs)
+// Analytics API
 export const analyticsAPI = {
   getOverview: () => api.get('/dashboard/stats'),
   getConsultantPerformance: () => api.get('/dashboard/consultant-performance'),

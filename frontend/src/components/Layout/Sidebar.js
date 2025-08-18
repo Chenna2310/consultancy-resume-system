@@ -15,9 +15,9 @@ const Sidebar = () => {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h2 className="sidebar-title">ConsultancyPro</h2>
+        <h2 className="sidebar-title">Jupiter IT Solutions</h2>
         <p style={{ color: '#9CA3AF', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-          Professional Resume Management
+          Empowering Your Digital Transformation
         </p>
       </div>
       
@@ -44,8 +44,8 @@ const Sidebar = () => {
         fontSize: '0.875rem',
         color: '#9CA3AF'
       }}>
-        <p>© 2024 ConsultancyPro</p>
-        <p>Enterprise Edition</p>
+        <p>© 2024 Jupiter IT Solutions LLC</p>
+        <p>Professional Edition</p>
       </div>
     </aside>
   );
