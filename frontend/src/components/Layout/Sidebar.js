@@ -4,10 +4,11 @@ import { NavLink, useLocation } from 'react-router-dom';
 const Sidebar = () => {
   const location = useLocation();
 
-  const navItems = [{ path: '/dashboard', label: 'Dashboard', icon: '📊' },
+  const navItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/bench-candidates', label: 'Bench Profiles', icon: '👥' },
-    { path: '/working-candidates', label: 'Working Candidates', icon: '💼' },
-    { path: '/employees', label: 'Consultancy Employees', icon: '👤' },
+    { path: '/employees', label: 'Employees', icon: '💼' },
+    { path: '/consultants', label: 'Consultancy Team', icon: '👤' },
     { path: '/vendors', label: 'Vendor Management', icon: '🏢' },
     { path: '/analytics', label: 'Analytics', icon: '📈' },
   ];

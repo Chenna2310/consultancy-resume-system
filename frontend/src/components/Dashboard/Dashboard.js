@@ -26,7 +26,9 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };const statCards = [
+  };
+
+  const statCards = [
     {
       title: 'Bench Profiles',
       value: stats.benchProfiles,
@@ -36,11 +38,11 @@ const Dashboard = () => {
       description: 'Available for placement'
     },
     {
-      title: 'Working Candidates',
+      title: 'Employees',
       value: stats.workingCandidates,
       color: '#10B981',
       bgColor: '#D1FAE5',
-      link: '/working-candidates',
+      link: '/employees',
       description: 'Currently employed'
     }
   ];
@@ -163,11 +165,11 @@ const Dashboard = () => {
             <Link to="/bench-candidates/new" className="btn-primary" style={{ textDecoration: 'none', width: 'auto' }}>
               ➕ Add Bench Candidate
             </Link>
-            <Link to="/working-candidates/new" className="btn-secondary" style={{ textDecoration: 'none' }}>
-              💼 Add Working Candidate
-            </Link>
             <Link to="/employees/new" className="btn-secondary" style={{ textDecoration: 'none' }}>
-              👤 Add Employee
+              💼 Add Employee
+            </Link>
+            <Link to="/consultants/new" className="btn-secondary" style={{ textDecoration: 'none' }}>
+              👤 Add Consultant
             </Link>
             <Link to="/vendors/new" className="btn-secondary" style={{ textDecoration: 'none' }}>
               🏢 Add Vendor

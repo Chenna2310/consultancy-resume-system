@@ -7,12 +7,13 @@ import Dashboard from './components/Dashboard/Dashboard';
 import BenchCandidateList from './components/BenchCandidates/BenchCandidateList';
 import BenchCandidateForm from './components/BenchCandidates/BenchCandidateForm';
 import BenchCandidateDetail from './components/BenchCandidates/BenchCandidateDetail';
-import WorkingCandidateList from './components/WorkingCandidates/WorkingCandidateList';
-import WorkingCandidateForm from './components/WorkingCandidates/WorkingCandidateForm';
-import VendorList from './components/Vendors/VendorList';
-import VendorForm from './components/Vendors/VendorForm';
 import EmployeeList from './components/Employees/EmployeeList';
 import EmployeeForm from './components/Employees/EmployeeForm';
+import EmployeeDetail from './components/Employees/EmployeeDetail';
+import VendorList from './components/Vendors/VendorList';
+import VendorForm from './components/Vendors/VendorForm';
+import ConsultantList from './components/Consultants/ConsultantList';
+import ConsultantForm from './components/Consultants/ConsultantForm';
 import Analytics from './components/Analytics/Analytics';
 import { isAuthenticated } from './utils/auth';
 import './App.css';
@@ -65,20 +66,21 @@ function App() {
             <Route path="bench-candidates/edit/:id" element={<BenchCandidateForm />} />
             <Route path="bench-candidates/detail/:id" element={<BenchCandidateDetail />} />
             
-            {/* Working Candidate Routes */}
-            <Route path="working-candidates" element={<WorkingCandidateList />} />
-            <Route path="working-candidates/new" element={<WorkingCandidateForm />} />
-            <Route path="working-candidates/edit/:id" element={<WorkingCandidateForm />} />
+            {/* Employee Routes (renamed from Working Candidates) */}
+            <Route path="employees" element={<EmployeeList />} />
+            <Route path="employees/new" element={<EmployeeForm />} />
+            <Route path="employees/edit/:id" element={<EmployeeForm />} />
+            <Route path="employees/detail/:id" element={<EmployeeDetail />} />
             
             {/* Vendor Routes */}
             <Route path="vendors" element={<VendorList />} />
             <Route path="vendors/new" element={<VendorForm />} />
             <Route path="vendors/edit/:id" element={<VendorForm />} />
             
-            {/* Employee Routes */}
-            <Route path="employees" element={<EmployeeList />} />
-            <Route path="employees/new" element={<EmployeeForm />} />
-            <Route path="employees/edit/:id" element={<EmployeeForm />} />
+            {/* Consultant Routes (renamed from original Employees) */}
+            <Route path="consultants" element={<ConsultantList />} />
+            <Route path="consultants/new" element={<ConsultantForm />} />
+            <Route path="consultants/edit/:id" element={<ConsultantForm />} />
             
             {/* Analytics */}
             <Route path="analytics" element={<Analytics />} />
